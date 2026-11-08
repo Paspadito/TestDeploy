@@ -1,13 +1,17 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Param, ServiceUnavailableException } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import type { Connection } from 'mongoose';
+import { AppService } from './app.service.js';
 
 @Controller()
 export class AppController {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(
+    private readonly appService: AppService,
+    @InjectConnection() private readonly connection: Connection,
+  ) {}
 
   @Get()
-  async getStatus(): Promise<{ api: string; database: string }> {
+  async getHello(): Promise<{ api: string; database: string }> {
     try {
       if (this.connection.readyState !== 1 || !this.connection.db) {
         throw new Error('MongoDB no está conectada');
@@ -21,5 +25,20 @@ export class AppController {
         database: 'desconectada',
       });
     }
+  }
+
+  @Get('a')
+  getA(): string {
+    return this.appService.getHello();
+  }
+
+  @Get('a/saludar')
+  getSaludarSantiago(): string {
+    return this.appService.getSaludarAldownDeSantiago();
+  }
+
+  @Get('a/:id')
+  traerUno(@Param('id') id: string): string {
+    return this.appService.traerUno(id);
   }
 }

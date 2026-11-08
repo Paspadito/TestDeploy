@@ -1,11 +1,24 @@
-import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { join } from 'node:path';
+import express = require('express');
+import cookieParser = require('cookie-parser');
 
-async function bootstrap(): Promise<void> {
+async function bootstrap() {
+  const { AppModule } = await import('./app.module.js');
   const app = await NestFactory.create(AppModule);
-  const port = Number(process.env.PORT) || 3000;
-  await app.listen(port);
+  app.use(cookieParser());
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: '', method: RequestMethod.GET }],
+  });
+  app.useGlobalPipes(new ValidationPipe());
+  const configService = app.get(ConfigService);
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
+  await app.listen(Number(configService.get<string>('PORT') ?? 3000));
 }
-
 void bootstrap();

@@ -1,30 +1,22 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AppController } from './app.controller';
-
-function getMongoUri(): string {
-  const uri = process.env.MONGODB_URI;
-
-  if (!uri || uri.includes('USUARIO:CONTRASENA') || uri.includes('cluster.mongodb.net')) {
-    throw new Error(
-      'MONGODB_URI no está configurada. Reemplaza los valores de ejemplo en .env por la URI de MongoDB Atlas.',
-    );
-  }
-
-  return uri;
-}
+import { Usuario, UsuarioSchema } from './database/schemas/usuario.schema.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UsuariosModule } from './usuarios/usuarios.module.js';
+import { PublicacionesModule } from './publicaciones/publicaciones.module.js';
 
 @Module({
   imports: [
-    MongooseModule.forRootAsync({
-      useFactory: () => ({
-        uri: getMongoUri(),
-        retryAttempts: 1,
-        serverSelectionTimeoutMS: 10_000,
-        maxPoolSize: 5,
-      }),
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
+    UsuariosModule,
+    PublicacionesModule,
+    MongooseModule.forRoot(process.env.MONGODB_URI ?? ''),
   ],
   controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
